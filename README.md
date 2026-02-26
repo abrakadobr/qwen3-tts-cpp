@@ -98,6 +98,7 @@ int main() {
   gen.text = "This is a test sentence.";
   gen.instruct = "Speak calmly with a soft voice.";
   gen.max_steps = 160;
+  gen.codec_lang = {-1} // language token id
 
   auto* voice = new QWEN3TTS::Voice();
   if (!voice->load(cfg)) {
@@ -117,6 +118,29 @@ int main() {
   return 0;
 }
 ```
+
+## Language Support
+
+The Qwen3-TTS model supports multiple languages and dialects. Each language is identified by a specific code:
+
+| Language | Code |
+|----------|------|
+| `chinese` | `2055` |
+| `english` | `2050` |
+| `german` | `2053` |
+| `italian` | `2070` |
+| `portuguese` | `2071` |
+| `spanish` | `2054` |
+| `japanese` | `2058` |
+| `korean` | `2064` |
+| `french` | `2061` |
+| `russian` | `2069` |
+| `beijing_dialect` | `2074` |
+| `sichuan_dialect` | `2062` |
+| `auto` | `-1` |
+
+These codes are used internally by the tokenizer to process text in the specified language. The "auto" option (-1) allows the model to automatically detect the language from the input text.
+
 
 ## Error Handling
 - `Voice::load(...)` returns `bool`:
@@ -168,6 +192,7 @@ int main() {
   --instruct "Speak calmly." \
   --output-wav artifacts/audio/cli_example.wav \
   --max-steps 120
+  --lang "english"
 ```
 
 Verified run (English phrase):
@@ -181,6 +206,7 @@ Verified run (English phrase):
   --device cpu \
   --intra-threads 2 \
   --inter-threads 1
+  --lang "russian"
 ```
 
 ## ORT Compatibility Note

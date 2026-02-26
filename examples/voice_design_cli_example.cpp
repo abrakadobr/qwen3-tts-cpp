@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
+#include <unordered_map>
 namespace {
 
 void PrintUsage(const char* exe) {
@@ -27,6 +27,7 @@ void PrintUsage(const char* exe) {
       << " [--tail-stop-repeat-frames N] [--tail-stop-min-steps N]"
       << " [--trim-tail-repeat-min N] [--trim-tail-keep N] [--eos-min-steps N]"
       << " [--do-sample] [--temperature F] [--top-k N] [--sample-seed N]\n";
+      << " [--lang LANG] (e.g. chinese, english, german, italian, portuguese, spanish, japanese, korean, french, russian, beijing_dialect, sichuan_dialect)\n";
 }
 
 bool ParseInt(const std::string& s, int* out) {
@@ -72,6 +73,26 @@ bool ParseOrtOpt(const std::string& s, GraphOptimizationLevel* out) {
   return false;
 }
 
+int ParseLangStr(const std::string& s) {
+    static const std::unordered_map<std::string, int> langMap = {
+        {"chinese", 2055},
+        {"english", 2050},
+        {"german", 2053},
+        {"italian", 2070},
+        {"portuguese", 2071},
+        {"spanish", 2054},
+        {"japanese", 2058},
+        {"korean", 2064},
+        {"french", 2061},
+        {"russian", 2069},
+        {"beijing_dialect", 2074},
+        {"sichuan_dialect", 2062}
+    };
+    
+    auto it = langMap.find(s);
+    return it != langMap.end() ? it->second : -1;
+}
+
 bool IsErrorPcm(const std::vector<float>& pcm, float* code) {
   if (pcm.size() == 1 && pcm[0] < 0.0f) {
     *code = pcm[0];
@@ -113,7 +134,8 @@ int main(int argc, char** argv) {
       if (!require_value(i, flag, &gen.instruct)) return 2;
     } else if (flag == "--output-wav") {
       if (!require_value(i, flag, &gen.wav_out)) return 2;
-    } else if (flag == "--save-codes-file") {
+    } 
+    else if (flag == "--save-codes-file") {
       if (!require_value(i, flag, &gen.codes_out)) return 2;
     } else if (flag == "--max-steps") {
       int v = 0;
@@ -145,6 +167,14 @@ int main(int argc, char** argv) {
         std::cerr << "Error: invalid --ort-opt value: " << value << " (use disable|basic|extended|all)\n";
         return 2;
       }
+    } else if (flag == "--lang") {
+      if (!require_value(i, flag, &value)) return 2;
+      int lang_id = ParseLangStr(value);
+      if (lang_id < 0) {
+        std::cerr << "Error: invalid language: " << value << "\n";
+        return 2;
+      }
+      gen.codec_lang = std::vector<long>{static_cast<long>(lang_id)};
     } else if (flag == "--intra-threads") {
       int v = 0;
       if (!require_value(i, flag, &value) || !ParseInt(value, &v)) {
